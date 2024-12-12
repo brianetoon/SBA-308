@@ -174,26 +174,3 @@ function getAssignmentDueDate(id) {
   return assignment ? assignment.due_at : undefined;
 }
 
-
-// sandbox
-
-dueDates = ['2023-01-25', '2024-02-12', '2030-01-05'];
-
-// function checkDueDate() {
-//   const date = new Date();
-//   let currentDate = date.toJSON().slice(0, 10);
-//   console.log(currentDate);
-// }
-
-// checkDueDate()
-
-const dateString = '2030-01-05';
-
-const due = new Date(dateString);
-const dueTime = due.getTime();
-console.log("due: ", dueTime);
-
-const now = Date.now()
-console.log("now: ", now);
-
-console.log(now > dueTime)
