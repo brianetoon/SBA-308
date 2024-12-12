@@ -79,9 +79,12 @@ const LearnerSubmissions = [
 function getLearnerData(course, ag, submissions) {
   
   const learners = getLearners(submissions);
-  console.log(learners);
+  // console.log(learners);
 
-  const learnersWithScores = getLearnersWithScores();
+  const learnersWithSubmissions = getLearnerSubmissions(learners, submissions);
+  // console.log(learnersWithSubmissions);
+
+
   
   // here, we would process this data to achieve the desired result.
   // const result = [
@@ -107,21 +110,90 @@ const result = getLearnerData(CourseInfo, AssignmentGroup, LearnerSubmissions);
 
 // Steps:
 // - create an object for each unique learner and store them in an array
+// - for each learner object, push LearnerSubmissions that match their ID into a completed_assignments array
+
+// - create a formatLearnerData function
+// - map through each object to format data at the end
+
+
+// Helper Functions:
 
 function getLearners(submissions) {
   const learners = [];
 
-  submissions.forEach(submission => {
-    if (!learners.some(learner => learner.id === submission.learner_id)) {
-      learners.push({ id: submission.learner_id })
+  submissions.forEach(sub => {
+    if (!learners.some(learner => learner.id === sub.learner_id)) {
+      learners.push({ 
+        id: sub.learner_id,  
+        completed_assignments: []
+      })
     } 
   });
 
   return learners;
 }
 
-function getLearnersWithScores() {
+function getLearnerSubmissions(learners, submissions) {
+  learners.forEach(learner => {
+    submissions.forEach(sub => {
+      if (learner.id === sub.learner_id) {
 
+        let points_possible = getAssignmentPoints(sub.assignment_id);
+        let due_date = getAssignmentDueDate(sub.assignment_id);
 
+        // console.log(due_date);
 
+        learner.completed_assignments.push({
+          id: sub.assignment_id,
+          submitted_at: sub.submission.submitted_at,
+          score: sub.submission.score,
+          points_possible,
+          due_date
+        });
+
+      }
+    });
+  });
+
+  return learners;
 }
+
+function getAssignmentPoints(id) {
+  const assignment = AssignmentGroup.assignments.find(assignment => {
+    return assignment.id === id;
+  });
+
+  return assignment ? assignment.points_possible : undefined;
+}
+
+function getAssignmentDueDate(id) {
+  const assignment = AssignmentGroup.assignments.find(assignment => {
+    return assignment.id === id;
+  });
+
+  return assignment ? assignment.due_at : undefined;
+}
+
+
+// sandbox
+
+dueDates = ['2023-01-25', '2024-02-12', '2030-01-05'];
+
+// function checkDueDate() {
+//   const date = new Date();
+//   let currentDate = date.toJSON().slice(0, 10);
+//   console.log(currentDate);
+// }
+
+// checkDueDate()
+
+const dateString = '2030-01-05';
+
+const due = new Date(dateString);
+const dueTime = due.getTime();
+console.log("due: ", dueTime);
+
+const now = Date.now()
+console.log("now: ", now);
+
+console.log(now > dueTime)
