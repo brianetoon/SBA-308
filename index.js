@@ -81,8 +81,8 @@ function getLearnerData(course, ag, submissions) {
   const learners = getLearners(submissions);
   // console.log(learners);
 
-  const learnersWithSubmissions = getLearnerSubmissions(learners, submissions);
-  // console.log(learnersWithSubmissions);
+  const learnersWithSubmissions = getLearnerSubmissionInfo(learners, submissions);
+  console.log(learnersWithSubmissions);
 
 
   
@@ -133,24 +133,27 @@ function getLearners(submissions) {
   return learners;
 }
 
-function getLearnerSubmissions(learners, submissions) {
+function getLearnerSubmissionInfo(learners, submissions) {
   learners.forEach(learner => {
     submissions.forEach(sub => {
       if (learner.id === sub.learner_id) {
 
-        let points_possible = getAssignmentPoints(sub.assignment_id);
-        let due_date = getAssignmentDueDate(sub.assignment_id);
+        let due_date = getDueDate(sub.assignment_id);
+        let isDue = checkIfDue(due_date);
 
-        // console.log(due_date);
+        if (isDue) {
+          let is_on_time = checkIfOnTime(sub.submission.submitted_at, due_date, sub.assignment_id);
+          let points_possible = getAssignmentPoints(sub.assignment_id);
 
-        learner.completed_assignments.push({
-          id: sub.assignment_id,
-          submitted_at: sub.submission.submitted_at,
-          score: sub.submission.score,
-          points_possible,
-          due_date
-        });
-
+          learner.completed_assignments.push({
+            id: sub.assignment_id,
+            submitted_at: sub.submission.submitted_at,
+            score: sub.submission.score,
+            points_possible,
+            due_date,
+            is_on_time
+          });
+        }
       }
     });
   });
@@ -166,7 +169,7 @@ function getAssignmentPoints(id) {
   return assignment ? assignment.points_possible : undefined;
 }
 
-function getAssignmentDueDate(id) {
+function getDueDate(id) {
   const assignment = AssignmentGroup.assignments.find(assignment => {
     return assignment.id === id;
   });
@@ -174,3 +177,15 @@ function getAssignmentDueDate(id) {
   return assignment ? assignment.due_at : undefined;
 }
 
+
+function checkIfDue(dueDate) {
+  const due = new Date(dueDate);
+  return Date.now() >= due.getTime();
+}
+
+function checkIfOnTime(submitDate, dueDate) {
+  const dueOn = new Date(dueDate);
+  const submittedOn = new Date(submitDate);
+
+  return dueOn.getTime() >= submittedOn.getTime();
+}
