@@ -77,36 +77,25 @@ const LearnerSubmissions = [
 ];
 
 function getLearnerData(course, ag, submissions) {
-  
-  const learners = getLearners(submissions);
-  // console.log(learners);
+  try {
+    if (course.id !== ag.course_id) {
+      throw new Error("Course ID does not match Assignment Group course ID.");
+    }
 
-  const learnersWithSubmissions = getLearnerSubmissionInfo(learners, submissions);
-  console.log(learnersWithSubmissions);
+    let learners = getLearners(submissions);
+    let learnerData = processLearnerSubmissions(learners, submissions);
+    let formattedLearnerData = formatLearnerData(learnerData);
 
+    return formattedLearnerData;
 
-  
-  // here, we would process this data to achieve the desired result.
-  // const result = [
-  //   {
-  //     id: 125,
-  //     avg: 0.985, // (47 + 150) / (50 + 150)
-  //     1: 0.94, // 47 / 50
-  //     2: 1.0 // 150 / 150
-  //   },
-  //   {
-  //     id: 132,
-  //     avg: 0.82, // (39 + 125) / (50 + 150)
-  //     1: 0.78, // 39 / 50
-  //     2: 0.833 // late: (140 - 15) / 150
-  //   }
-  // ];
-
-  // return result;
+  } catch (error) {
+    console.error(error.message);
+    return null; 
+  }
 }
 
 const result = getLearnerData(CourseInfo, AssignmentGroup, LearnerSubmissions);
-// console.log("result:", result);
+console.log("result:", result);
 
 // Steps:
 // - create an object for each unique learner and store them in an array
@@ -118,6 +107,7 @@ const result = getLearnerData(CourseInfo, AssignmentGroup, LearnerSubmissions);
 
 // Helper Functions:
 
+// Creates an object for each unique learner pushes it to the returned array
 function getLearners(submissions) {
   const learners = [];
 
@@ -125,7 +115,10 @@ function getLearners(submissions) {
     if (!learners.some(learner => learner.id === sub.learner_id)) {
       learners.push({ 
         id: sub.learner_id,  
-        completed_assignments: []
+        completed_assignments: [],
+        total_points_earned: 0,
+        total_points_possible: 0,
+        overall_grade: null
       })
     } 
   });
@@ -133,7 +126,9 @@ function getLearners(submissions) {
   return learners;
 }
 
-function getLearnerSubmissionInfo(learners, submissions) {
+// Finds submissions that correspond with their respective learner
+// The submission data is then processed so all information needed for final output is available
+function processLearnerSubmissions(learners, submissions) {
   learners.forEach(learner => {
     submissions.forEach(sub => {
       if (learner.id === sub.learner_id) {
@@ -144,6 +139,13 @@ function getLearnerSubmissionInfo(learners, submissions) {
         if (isDue) {
           let is_on_time = checkIfOnTime(sub.submission.submitted_at, due_date, sub.assignment_id);
           let points_possible = getAssignmentPoints(sub.assignment_id);
+          let grade = calculateGrade(sub.submission.score, points_possible, is_on_time);
+
+          learner.total_points_earned += (points_possible * grade);
+          learner.total_points_possible += points_possible;
+
+          let overallGrade = learner.total_points_earned / learner.total_points_possible;
+          learner.overall_grade = formatNumber(overallGrade);
 
           learner.completed_assignments.push({
             id: sub.assignment_id,
@@ -151,7 +153,8 @@ function getLearnerSubmissionInfo(learners, submissions) {
             score: sub.submission.score,
             points_possible,
             due_date,
-            is_on_time
+            is_on_time,
+            grade
           });
         }
       }
@@ -160,6 +163,36 @@ function getLearnerSubmissionInfo(learners, submissions) {
 
   return learners;
 }
+
+// Takes the processed learner data and formats it to the desired final output
+function formatLearnerData(learners) {
+  // Generates a new array of formatted data that will be returned to the main function
+  let formattedData = learners.map(learner => {
+    // Distills the assignment objects into only the information we need for final output
+    let formattedAssignments = learner.completed_assignments.map(assignment => {
+      return {
+        id: assignment.id,
+        grade: assignment.grade
+      }
+    });
+    
+    // Reduce method used to turn assignment objects into key value pairs and add them 
+    // to the final learner object
+    let result = formattedAssignments.reduce((acc, assignment) => {
+      acc[assignment.id] = assignment.grade;
+      return acc;
+    }, {
+      id: learner.id,
+      avg: learner.overall_grade, 
+    });
+
+    return result;
+  });
+
+  return formattedData;
+}
+
+// Other helper functions:
 
 function getAssignmentPoints(id) {
   const assignment = AssignmentGroup.assignments.find(assignment => {
@@ -177,7 +210,6 @@ function getDueDate(id) {
   return assignment ? assignment.due_at : undefined;
 }
 
-
 function checkIfDue(dueDate) {
   const due = new Date(dueDate);
   return Date.now() >= due.getTime();
@@ -188,4 +220,19 @@ function checkIfOnTime(submitDate, dueDate) {
   const submittedOn = new Date(submitDate);
 
   return dueOn.getTime() >= submittedOn.getTime();
+}
+
+function calculateGrade(score, pointsPossible, onTime) {
+  let grade;
+
+  if (!onTime) {
+    grade = ((score - (pointsPossible * 0.1)) / pointsPossible);
+  } else {
+    grade = (score / pointsPossible);
+  }
+  return formatNumber(grade);
+}
+
+function formatNumber(num, decimalPlaces = 3) {
+  return Number(num.toFixed(decimalPlaces));
 }
