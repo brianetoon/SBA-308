@@ -52,6 +52,6 @@ My goal for this project was to achieve the desired result by creating functions
 
 **Step 1:** Create an object for each unique learner and store it in an array. To do this I created a `getLearners()` function that took in the provided submission data to generate an object for each unique learner.
 
-**Step 2:** Find submissions that correspond with their respective learner and process it so that all data required for the final output is available. I accomplished this by creating a function called `processLearnerSubmissions()`. 
+**Step 2:** Find submissions that correspond with their respective learner and process them so that all data required for the final output is available. I accomplished this by creating a function called `processLearnerSubmissions()`. 
 
-**Step 3:** Once all data required for the final output is available on each learner object, format it based on the desired final result. I did this by passing the data returned in step 2 to a function called `formatLearnerData()`.
+**Step 3:** Once all data required for the final output was available on each learner object, I formatted it according to the desired final result. I did this by passing the data returned in step 2 to a function called `formatLearnerData()`.
