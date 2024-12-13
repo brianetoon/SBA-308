@@ -112,15 +112,26 @@ function getLearners(submissions) {
   const learners = [];
 
   submissions.forEach(sub => {
-    if (!learners.some(learner => learner.id === sub.learner_id)) {
+    
+    // Check if learner is already in the array
+    let learnerExists = false;
+    for (let i = 0; i < learners.length; i++) {
+      if (learners[i].id === sub.learner_id) {
+        learnerExists = true;
+        break;
+      }
+    }
+
+    // Add a new learner object if there isn't one that matches submission learner_id
+    if (!learnerExists) {
       learners.push({ 
         id: sub.learner_id,  
         completed_assignments: [],
         total_points_earned: 0,
         total_points_possible: 0,
         overall_grade: null
-      })
-    } 
+      });
+    }
   });
 
   return learners;
@@ -175,7 +186,7 @@ function formatLearnerData(learners) {
         grade: assignment.grade
       }
     });
-    
+
     // Reduce method used to turn assignment objects into key value pairs and add them 
     // to the final learner object
     let result = formattedAssignments.reduce((acc, assignment) => {
